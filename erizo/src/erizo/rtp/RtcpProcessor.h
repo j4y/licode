@@ -32,7 +32,11 @@ namespace erizo {
   class RtcpData {
   // lost packets - list and length
   public:
+    uint32_t *nackList;
+    int nackLen;
+
     // current values - tracks packet lost for fraction calculation
+    uint32_t packetCount;
     uint16_t rrsReceivedInPeriod;
 
     uint32_t ssrc;
@@ -42,8 +46,6 @@ namespace erizo {
     uint32_t lastSr;
     uint64_t reportedBandwidth;
     uint32_t delaySinceLastSr;
-
-    uint32_t nextPacketInMs;
     
     uint32_t lastDelay;
 
@@ -55,8 +57,9 @@ namespace erizo {
     uint16_t nackBlp;
 
     // time based data flow limits
-    struct timeval lastSrUpdated, lastREMBSent;
-    struct timeval lastSrReception, lastRrWasScheduled;
+    struct timeval lastUpdated, lastSent, lastSrUpdated;
+    struct timeval lastREMBSent, lastPliSent;
+    struct timeval lastSrReception;
     // to prevent sending too many reports, track time of last
     struct timeval lastRrSent;
     
@@ -65,16 +68,23 @@ namespace erizo {
     bool shouldSendNACK;
     // flag to send receiver report
     bool requestRr;
-    bool shouldReset;
+    bool hasSentFirstRr;
 
     MediaType mediaType;
 
     std::list<boost::shared_ptr<SrData>> senderReports;
 
-    void reset(uint32_t bandwidth);
+    void reset(){
+      ratioLost = 0;
+      requestRr = false;
+      jitter = 0;
+      rrsReceivedInPeriod = 0;
+      reportedBandwidth = 0;
+      lastDelay = lastDelay*0.8;
+    }
 
     RtcpData(){
-      nextPacketInMs = 0;
+      packetCount = 0;        
       rrsReceivedInPeriod = 0;
       totalPacketsLost = 0;
       ratioLost = 0;
@@ -85,18 +95,18 @@ namespace erizo {
       jitter = 0;
       lastSrTimestamp = 0;
       requestRr = false;
+      hasSentFirstRr = false;
       lastDelay = 0;
      
       shouldSendPli = false;
       shouldSendREMB = false;
       shouldSendNACK = false;
-      shouldReset = false;
       nackSeqnum = 0;
       nackBlp = 0;
       lastRrSent = (struct timeval){0, 0};
+      lastPliSent = (struct timeval){0, 0};
       lastREMBSent = (struct timeval){0, 0};
       lastSrReception = (struct timeval){0, 0};
-      lastRrWasScheduled = (struct timeval){0, 0};
     }
 
     // lock for any blocking data change
@@ -116,19 +126,17 @@ class RtcpProcessor{
     void analyzeFeedback(char* buf, int len);
     void checkRtcpFb();
     int addREMB(char* buf, int len, uint32_t bitrate);
-    int addNACK(char* buf, int len, uint16_t seqNum, uint16_t blp, uint32_t sourceSsrc, uint32_t sinkSsrc);
+    int addNACK(char* buf, int len, uint16_t seqNum, uint16_t blp, uint32_t sourceSsrc);
 
   private:
-    static const int RR_AUDIO_PERIOD = 2000;
-    static const int RR_VIDEO_BASE = 1000; 
-    static const int REMB_TIMEOUT = 5000;
+    static const int RTCP_PERIOD = 200;
+    static const int PLI_THRESHOLD = 50;
+    static const int REMB_TIMEOUT = 2000;
     static const uint64_t NTPTOMSCONV = 4294967296;
     std::map<uint32_t, boost::shared_ptr<RtcpData>> rtcpData_;
-    boost::mutex mapLock_;
     MediaSink* rtcpSink_;  // The sink to send RRs
     MediaSource* rtcpSource_; // The source of SRs
     uint32_t defaultBw_;
-    uint8_t packet_[128];
 
 };
 
