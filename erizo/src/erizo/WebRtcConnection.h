@@ -185,6 +185,9 @@ private:
 
   webrtc::FecReceiverImpl fec_receiver_;
 	boost::condition_variable cond_;
+
+
+  struct timeval now_, mark_;
 };
 
 } /* namespace erizo */
