@@ -282,7 +282,7 @@ exports.ErizoJSController = function (spec) {
                     subscribers[streamId][peerId].setRemoteSdp(msg.sdp);
                 } else if (msg.type === 'candidate') {
                     subscribers[streamId][peerId].addRemoteCandidate(msg.candidate.sdpMid, msg.candidate.sdpMLineIndex , msg.candidate.candidate);
-                } else if (msg.type === 'updatestream'){
+                } else if (msg.type === 'updatesdp'){
                     subscribers[streamId][peerId].setRemoteSdp(msg.sdp);
                 }
             } else {
@@ -290,22 +290,8 @@ exports.ErizoJSController = function (spec) {
                     publishers[streamId].wrtc.setRemoteSdp(msg.sdp);
                 } else if (msg.type === 'candidate') {
                     publishers[streamId].wrtc.addRemoteCandidate(msg.candidate.sdpMid, msg.candidate.sdpMLineIndex, msg.candidate.candidate);
-                } else if (msg.type === 'updatestream'){
-                    if (msg.sdp){
-                        publishers[streamId].wrtc.setRemoteSdp(msg.sdp);
-                    }
-                    if (msg.minVideoBW){
-                        log.debug("Updating minVideoBW to ", msg.minVideoBW);
-                        publishers[streamId].minVideoBW = msg.minVideoBW;
-                        for (var sub in subscribers[streamId]){
-                            log.debug("sub", sub);
-                            log.debug("updating subscriber BW from", subscribers[streamId][sub].minVideoBW, "to", msg.minVideoBW*1000 );
-                            var theConn = subscribers[streamId][sub];
-                            theConn.minVideoBW = msg.minVideoBW*1000; // We need it in bps
-                            theConn.lowerThres = Math.floor(theConn.minVideoBW*(1-0.2));
-                            theConn.upperThres = Math.ceil(theConn.minVideoBW*(1+0.1));
-                        }
-                    }
+                } else if (msg.type === 'updatesdp'){
+                    publishers[streamId].wrtc.setRemoteSdp(msg.sdp);
                 }
             }
             
