@@ -54,7 +54,8 @@ exports.createRoom = function (req, res) {
             });
         }
     } else {
-        room = {name: req.body.name};
+	// set _id to be the same as room name
+        room = {name: req.body.name, _id: req.body.name};
         
         if (req.body.options.p2p) {
             room.p2p = true;

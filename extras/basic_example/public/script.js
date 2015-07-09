@@ -1,5 +1,6 @@
 var serverUrl = "/";
-var localStream, room, recording, recordingId;
+var localStream, room, recording,
+    recordingId = Math.random() * 10000000;  // FIXME: get recordingId from somewhere
 
 function getParameterByName(name) {
   name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -15,9 +16,8 @@ function testConnection () {
 function startRecording () {
   if (room !== undefined){
     if (!recording){
-      room.startRecording(localStream, function(id) {
+      room.startRecording(localStream, recordingId, function(id) {
         recording = true;
-        recordingId = id;
       });
 
     } else {

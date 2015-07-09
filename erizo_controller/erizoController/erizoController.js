@@ -478,7 +478,10 @@ var listen = function () {
                 return;
             }
             var streamId = options.to;
-            var recordingId = Math.random() * 1000000000000000000;
+
+	    // use recording ID instead of random number
+            var recordingId = options.recordingId;
+
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
