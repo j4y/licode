@@ -3,6 +3,7 @@ var crypto = require('crypto');
 var rpcPublic = require('./rpc/rpcPublic');
 var ST = require('./Stream');
 var http = require('http');
+var affdex = require('affdex-licode');
 var server = http.createServer();
 var io = require('socket.io').listen(server, {log:false});
 var config = require('./../../licode_config');
@@ -589,7 +590,10 @@ var listen = function () {
                 return;
             }
             var streamId = options.to;
-            var recordingId = Math.random() * 1000000000000000000;
+
+	    // use recording ID instead of random number
+            var recordingId = options.recordingId;
+
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
@@ -633,6 +637,15 @@ var listen = function () {
 
             log.info("erizoController.js: Stoping recording  " + recordingId + " url " + url);
             socket.room.controller.removeExternalOutput(url, callback);
+
+	    var sessionToken = recordingId;
+            log.info("erizoController.js: affdex.saveVideo " + recordingId);
+	
+            affdex.saveVideo(sessionToken, url, function(err, data) {
+		log.info('saveVideo callback');
+		log.info(data);
+	    });
+
         });
 
         //Gets 'unpublish' messages on the socket in order to remove a stream from the room.
