@@ -1,5 +1,6 @@
 var serverUrl = "/";
-var localStream, room;
+var localStream, room,
+    sessionId = Math.random() * 1000;  // FIXME: get sessionId from somewhere
 
 function printText(text) {
   document.getElementById('messages').value += '- ' + text + '\n';
@@ -9,7 +10,7 @@ window.onload = function () {
   var config = {audio: true, video: true, data: true, videoSize: [640, 480, 640, 480]};
   localStream = Erizo.Stream(config);
   var token = JSON.stringify({
-    "room": "basicExampleRoom",
+    "id": "session-" + sessionId,
     "host": "192.168.33.99:8080",  // FIXME: needs to come from the server
     "secure": false
   });
@@ -27,7 +28,7 @@ window.onload = function () {
 
     room.addEventListener("room-connected", function (roomEvent) {
       printText('Connected to the room OK');
-      room.publish(localStream, {maxVideoBW: 300});
+      room.publish(localStream, {maxVideoBW: 3000, minVideoBW:500});
     });
 
     room.addEventListener("stream-subscribed", function(streamEvent) {

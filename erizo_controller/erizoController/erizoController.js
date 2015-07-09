@@ -196,10 +196,10 @@ var listen = function () {
 
             var tokenDB = token, user, streamList = [], index;
 
-            if (rooms[tokenDB.room] === undefined) {
+            if (rooms[tokenDB.id] === undefined) {
                 var room = {};
 
-                room.id = tokenDB.room;
+                room.id = tokenDB.id;
                 room.sockets = [];
                 room.sockets.push(socket.id);
                 room.streams = {}; //streamId: Stream
@@ -231,21 +231,19 @@ var listen = function () {
 
                     });
                 }
-                rooms[tokenDB.room] = room;
+                rooms[tokenDB.id] = room;
             } else {
-                rooms[tokenDB.room].sockets.push(socket.id);
+                rooms[tokenDB.id].sockets.push(socket.id);
             }
             user = {name: "user"};
             socket.user = user;
-            socket.room = rooms[tokenDB.room];
+            socket.room = rooms[tokenDB.id];
             socket.streams = []; //[list of streamIds]
             socket.state = 'sleeping';
 
-            log.debug('OK, Valid token');
-
             if (!tokenDB.p2p && GLOBAL.config.erizoController.report.session_events) {
                 var timeStamp = new Date();
-                amqper.broadcast('event', {room: tokenDB.room, user: socket.id, type: 'user_connection', timestamp:timeStamp.getTime()});
+                amqper.broadcast('event', {room: tokenDB.id, user: socket.id, type: 'user_connection', timestamp:timeStamp.getTime()});
             }
 
             for (index in socket.room.streams) {
@@ -444,7 +442,7 @@ var listen = function () {
         // Returns callback(id, error)
         socket.on('startRecorder', function (options, callback) {
             var streamId = options.to;
-            var recordingId = Math.random() * 1000000000000000000;
+            var recordingId = socket.room.id;
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
@@ -469,11 +467,12 @@ var listen = function () {
                 callback(null, 'Stream can not be recorded');
             }
         });
-        
+
         // Gets 'stopRecorder' messages
         // Returns callback(result, error)
         socket.on('stopRecorder', function (options, callback) {
-            var recordingId = options.id;
+            var recordingId = socket.room.id;
+
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
@@ -482,7 +481,7 @@ var listen = function () {
                 url = '/tmp/' + recordingId + '.mkv';
             }
 
-            log.info("erizoController.js: Stoping recording  " + recordingId + " url " + url);
+            log.info("erizoController.js: Stopping recording  " + recordingId + " url " + url);
             socket.room.controller.removeExternalOutput(url, callback);
         });
 

@@ -477,8 +477,10 @@ Erizo.Room = function (spec) {
 
     // Returns callback(id, error)
     that.startRecording = function (stream, callback) {
-        L.Logger.debug("Start Recording streamaa: " + stream.getID());
-        sendMessageSocket('startRecorder', {to: stream.getID()}, function(id, error){
+        var recordingId = that.roomID;
+        L.Logger.debug("Start Recording stream: " + stream.getID() + " - " + recordingId);
+        // send the roomID in as the recordingId
+        sendMessageSocket('startRecorder', {to: stream.getID(), recordingId: recordingId}, function(id, error){
             if (id === null){
                 L.Logger.error('Error on start recording', error);
                 if (callback) callback(undefined, error);
@@ -491,8 +493,8 @@ Erizo.Room = function (spec) {
     }
 
     // Returns callback(id, error)
-    that.stopRecording = function (recordingId, callback) {
-        sendMessageSocket('stopRecorder', {id: recordingId}, function(result, error){
+    that.stopRecording = function (callback) {
+        sendMessageSocket('stopRecorder', {}, function(result, error){
             if (result === null){
                 L.Logger.error('Error on stop recording', error);
                 if (callback) callback(undefined, error);
