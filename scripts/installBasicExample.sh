@@ -11,5 +11,5 @@ EXTRAS=$ROOT/extras
 
 cd $EXTRAS/basic_example
 
-npm install --loglevel error express body-parser morgan errorhandler
+/usr/bin/npm install --loglevel error express body-parser morgan errorhandler
 cd $CURRENT_DIR
