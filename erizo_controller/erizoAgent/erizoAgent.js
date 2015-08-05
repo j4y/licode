@@ -98,12 +98,9 @@ var removeChild = function(id) {
 };
 
 var launchErizoJS = function() {
-    console.log("Running process");
     var id = guid();
-    var fs = require('fs');
-    var out = fs.openSync('./erizo-' + id + '.log', 'a');
-    var err = fs.openSync('./erizo-' + id + '.log', 'a');
-    var erizoProcess = spawn('./launch.sh', ['./../erizoJS/erizoJS.js', id, privateIP, publicIP], { detached: true, stdio: [ 'ignore', out, err ] });
+    console.log("Running process", id);
+    var erizoProcess = spawn('./launch.sh', ['./../erizoJS/erizoJS.js', id, privateIP, publicIP], { detached: true, stdio: 'inherit' });
     erizoProcess.unref();
     erizoProcess.on('close', function (code) {
 
