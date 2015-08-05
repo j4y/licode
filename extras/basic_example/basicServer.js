@@ -7,12 +7,8 @@ var express = require('express'),
     N = require('./nuve'),
     fs = require("fs"),
     https = require("https"),
-        config = require('./../../licode_config');
+    config = require('./../../licode_config');
 
-var options = {
-    key: fs.readFileSync('../../cert/key.pem').toString(),
-    cert: fs.readFileSync('../../cert/cert.pem').toString()
-};
 
 var app = express();
 
@@ -30,9 +26,6 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-//app.set('views', __dirname + '/../views/');
-//disable layout
-//app.set("view options", {layout: false});
 
 N.API.init(config.nuve.superserviceID, config.nuve.superserviceKey, 'http://localhost:3000/');
 
@@ -48,7 +41,6 @@ N.API.getRooms(function(roomlist) {
         }
     }
     if (!myRoom) {
-
         N.API.createRoom('basicExampleRoom', function(roomID) {
             myRoom = roomID._id;
             console.log('Created room ', myRoom);
@@ -56,22 +48,6 @@ N.API.getRooms(function(roomlist) {
     } else {
         console.log('Using room', myRoom);
     }
-});
-
-
-app.get('/getRooms/', function(req, res) {
-    "use strict";
-    N.API.getRooms(function(rooms) {
-        res.send(rooms);
-    });
-});
-
-app.get('/getUsers/:room', function(req, res) {
-    "use strict";
-    var room = req.params.room;
-    N.API.getUsers(room, function(users) {
-        res.send(users);
-    });
 });
 
 
@@ -100,8 +76,4 @@ app.use(function(req, res, next) {
 });
 
 
-
 app.listen(3001);
-
-var server = https.createServer(options, app);
-server.listen(3004);
