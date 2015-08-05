@@ -98,7 +98,7 @@ checkOrInstallnpm(){
 	echo Checking for $1
 	if [ "" == "$NPM_OK" ]; then
 	  echo -e "\tNo $1 installed"
-	  sudo npm install -g $1 $2
+	  sudo /usr/bin/npm install -g $1 $2
 	else
 	  echo -e "\t$1 Installed"
 	fi
