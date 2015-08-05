@@ -159,7 +159,6 @@ install_apt_deps(){
       checkOrInstallaptitude libtool
       checkOrInstallaptitude automake
       checkOrInstallaptitude curl      
-      checkOrInstallaptitude mongodb
       checkOrInstallaptitude rabbitmq-server
       checkOrInstallaptitude libboost-test-dev
       checkOrInstallaptitude openjdk-6-jre

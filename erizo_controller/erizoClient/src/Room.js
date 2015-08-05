@@ -276,7 +276,7 @@ Erizo.Room = function (spec) {
     // It stablishes a connection to the room. Once it is done it throws a RoomEvent("room-connected")
     that.connect = function () {
         var streamList = [],
-            token = L.Base64.decodeBase64(spec.token);
+            token = spec.token;
 
         if (that.state !== DISCONNECTED) {
             L.Logger.error("Room already connected");
