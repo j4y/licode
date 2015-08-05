@@ -243,6 +243,7 @@ Erizo.Room = function (spec) {
 
     // Function to send a message to the server using socket.io
     sendMessageSocket = function (type, msg, callback, error) {
+        console.log("sendMessageSocket ", type, " ", msg);
         that.socket.emit(type, msg, function (respType, msg) {
             if (respType === "success") {
                 if (callback !== undefined) {

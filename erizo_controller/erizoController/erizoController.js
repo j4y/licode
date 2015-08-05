@@ -300,7 +300,7 @@ var listen = function () {
         // Then registers it in the room and callback to the client.
         socket.on('token', function (token, callback) {
 
-            //log.debug("New token", token);
+            log.debug("New token", token);
 
             var tokenDB, user, streamList = [], index;
 
@@ -318,6 +318,7 @@ var listen = function () {
                         socket.disconnect();
 
                     } else if (token.host === resp.host) {
+                        log.debug('deleteToken response ', resp)
                         tokenDB = resp;
                         if (rooms[tokenDB.room] === undefined) {
                             var room = {};
