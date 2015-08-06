@@ -196,6 +196,7 @@ var listen = function () {
             log.debug("New token", token);
 
             var tokenDB = token, user, streamList = [], index;
+            tokenDB.room = 'recordingRoom';
 
             if (rooms[tokenDB.room] === undefined) {
                 var room = {};

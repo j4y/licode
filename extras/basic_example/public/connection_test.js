@@ -16,7 +16,6 @@ window.onload = function () {
   var config = {audio: true, video: true, data: true, videoSize: [640, 480, 640, 480]};
   localStream = Erizo.Stream(config);
   var token = JSON.stringify({
-    "room": "basicExampleRoom",
     "host": "192.168.33.99:8080",  // FIXME: needs to come from the server
     "secure": false
   });
