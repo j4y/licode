@@ -1,13 +1,6 @@
 var serverUrl = "/";
 var localStream, room, recording, recordingId;
 
-function getParameterByName(name) {
-  name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-      results = regex.exec(location.search);
-  return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
-
 function testConnection () {
   window.location = "/connection_test.html";
 }
@@ -29,13 +22,7 @@ function startRecording () {
 
 window.onload = function () {
   recording = false;
-  var screen = getParameterByName("screen");
-  var config = {audio: true, video: true, data: true, screen: screen, videoSize: [640, 480, 640, 480]};
-  // If we want screen sharing we have to put our Chrome extension id. The default one only works in our Lynckia test servers.
-  // If we are not using chrome, the creation of the stream will fail regardless.
-  if (screen){
-    config.extensionId = "okeephmleflklcdebijnponpabbmmgeo";
-  }
+  var config = {audio: true, video: true, data: true, screen: false, videoSize: [640, 480, 640, 480]};
   localStream = Erizo.Stream(config);
 
   var token = JSON.stringify({
