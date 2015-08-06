@@ -28,7 +28,6 @@ GLOBAL.config.erizoController.limit_n_rooms = GLOBAL.config.erizoController.limi
 GLOBAL.config.erizoController.interval_time_keepAlive = GLOBAL.config.erizoController.interval_time_keepAlive || 1000;
 GLOBAL.config.erizoController.report.session_events = GLOBAL.config.erizoController.report.session_events || false;
 GLOBAL.config.erizoController.recording_path = GLOBAL.config.erizoController.recording_path || undefined;
-GLOBAL.config.erizoController.roles = GLOBAL.config.erizoController.roles || {"presenter":{"publish": true, "subscribe":true, "record":true}, "viewer":{"subscribe":true}, "viewerWithData":{"subscribe":true, "publish":{"audio":false,"video":false,"screen":false,"data":true}}};
 
 // Parse command line arguments
 var getopt = new Getopt([
@@ -237,13 +236,8 @@ var listen = function () {
             } else {
                 rooms[tokenDB.room].sockets.push(socket.id);
             }
-            user = {name: "user", role: "presenter"};
+            user = {name: "user"};
             socket.user = user;
-            var permissions = GLOBAL.config.erizoController.roles[socket.user.role] || [];
-            socket.user.permissions = {};
-            for (var right in permissions) {
-                socket.user.permissions[right] = permissions[right];
-            }
             socket.room = rooms[tokenDB.room];
             socket.streams = []; //[list of streamIds]
             socket.state = 'sleeping';
@@ -317,17 +311,6 @@ var listen = function () {
         // Returns callback(id, error)
         socket.on('publish', function (options, sdp, callback) {
             var id, st;
-            if (socket.user === undefined || !socket.user.permissions[Permission.PUBLISH]) {
-                callback(null, 'Unauthorized');
-                return;
-            }
-            if (socket.user.permissions[Permission.PUBLISH] !== true) {
-                var permissions = socket.user.permissions[Permission.PUBLISH];
-                for (var right in permissions) {
-                    if ((options[right] === true) && (permissions[right] === false))
-                        return callback(null, 'Unauthorized');
-                }
-            } 
             id = Math.random() * 1000000000000000000;
 
             log.debug('received publish: id', id, 'state', options.state);
@@ -410,18 +393,6 @@ var listen = function () {
         // Returns callback(result, error)
         socket.on('subscribe', function (options, sdp, callback) {
             //log.info("Subscribing", options, callback);
-            if (socket.user === undefined || !socket.user.permissions[Permission.SUBSCRIBE]) {
-                callback(null, 'Unauthorized');
-                return;
-            }
-
-            if (socket.user.permissions[Permission.SUBSCRIBE] !== true) {
-                var permissions = socket.user.permissions[Permission.SUBSCRIBE];
-                for (var right in permissions) {
-                    if ((options[right] === true) && (permissions[right] === false))
-                        return callback(null, 'Unauthorized');
-                }
-            }
 
             var stream = socket.room.streams[options.streamId];
 
@@ -473,10 +444,6 @@ var listen = function () {
         // Gets 'startRecorder' messages
         // Returns callback(id, error)
         socket.on('startRecorder', function (options, callback) {
-            if (socket.user === undefined || !socket.user.permissions[Permission.RECORD]) {
-                callback(null, 'Unauthorized');
-                return;
-            }
             var streamId = options.to;
 
 	    // use recording ID instead of random number
@@ -510,10 +477,6 @@ var listen = function () {
         // Gets 'stopRecorder' messages
         // Returns callback(result, error)
         socket.on('stopRecorder', function (options, callback) {
-            if (socket.user === undefined || !socket.user.permissions[Permission.RECORD]) {
-                if (callback) callback(null, 'Unauthorized');
-                return;
-            }
             var recordingId = options.id;
             var url;
 
@@ -530,11 +493,6 @@ var listen = function () {
         //Gets 'unpublish' messages on the socket in order to remove a stream from the room.
         // Returns callback(result, error)
         socket.on('unpublish', function (streamId, callback) {
-            if (socket.user === undefined || !socket.user.permissions[Permission.PUBLISH]) {
-                if (callback) callback(null, 'Unauthorized');
-                return;
-            }
-
             // Stream has been already deleted or it does not exist
             if (socket.room.streams[streamId] === undefined) {
                 return;
@@ -567,10 +525,6 @@ var listen = function () {
         //Gets 'unsubscribe' messages on the socket in order to remove a subscriber from a determined stream (to).
         // Returns callback(result, error)
         socket.on('unsubscribe', function (to, callback) {
-            if (!socket.user.permissions[Permission.SUBSCRIBE]) {
-                if (callback) callback(null, 'unauthorized');
-                return;
-            }
             if (socket.room.streams[to] === undefined) {
                 return;
             }
