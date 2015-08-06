@@ -236,9 +236,9 @@ var listen = function () {
             } else {
                 rooms[tokenDB.room].sockets.push(socket.id);
             }
-            user = {name: tokenDB.userName, role: tokenDB.role};
+            user = {name: "user", role: "presenter"};
             socket.user = user;
-            var permissions = GLOBAL.config.erizoController.roles[tokenDB.role] || [];
+            var permissions = GLOBAL.config.erizoController.roles[socket.user.role] || [];
             socket.user.permissions = {};
             for (var right in permissions) {
                 socket.user.permissions[right] = permissions[right];
