@@ -44,7 +44,7 @@ check_proxy(){
 }
 
 install_apt_deps(){
-sudo yum -y install git make gcc openssl-devel cmake pkgconfig nodejs boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server mongodb curl boost-test tar xz libffi-devel npm yasm java-1.7.0-openjdk
+sudo yum -y install git make gcc openssl-devel cmake pkgconfig nodejs boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server curl boost-test tar xz libffi-devel npm yasm java-1.7.0-openjdk
   sudo chown -R `whoami` ~/.npm ~/tmp/
 }
 
