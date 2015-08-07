@@ -2,13 +2,6 @@ var serverUrl = "/";
 var localStream, room, recording,
     recordingId = Math.random() * 10000000;  // FIXME: get recordingId from somewhere
 
-function getParameterByName(name) {
-  name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-      results = regex.exec(location.search);
-  return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
-
 function testConnection () {
   window.location = "/connection_test.html";
 }
@@ -29,8 +22,7 @@ function startRecording () {
 
 window.onload = function () {
   recording = false;
-  var screen = getParameterByName("screen");
-  var config = {audio: true, video: true, data: true, screen: screen, videoSize: [640, 480, 640, 480]};
+  var config = {audio: true, video: true, data: true, screen: false, videoSize: [640, 480, 640, 480]};
   localStream = Erizo.Stream(config);
 
   var token = JSON.stringify({
