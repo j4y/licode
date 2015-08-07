@@ -40,6 +40,7 @@ window.onload = function () {
   room = Erizo.Room({token: token});
   room.addEventListener("room-connected", function (roomEvent) {
     room.publish(localStream, {maxVideoBW: 3000, minVideoBW:500});
+    document.getElementById("recordButton").disabled = false;
   });
   room.addEventListener("stream-failed", function (streamEvent){
     console.log("STREAM FAILED, DISCONNECTION");
