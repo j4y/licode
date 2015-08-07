@@ -1,6 +1,6 @@
 var serverUrl = "/";
 var localStream, room, recording,
-    recordingId = Math.random() * 10000000;  // FIXME: get recordingId from somewhere
+    sessionId = Math.random() * 1000;  // FIXME: get sessionId from somewhere
 
 function testConnection () {
   window.location = "/connection_test.html";
@@ -9,12 +9,11 @@ function testConnection () {
 function startRecording () {
   if (room !== undefined){
     if (!recording){
-      room.startRecording(localStream, recordingId, function(id) {
+      room.startRecording(localStream, function(id) {
         recording = true;
       });
-
     } else {
-      room.stopRecording(recordingId);
+      room.stopRecording();
       recording = false;
     }
   }
@@ -26,6 +25,7 @@ window.onload = function () {
   localStream = Erizo.Stream(config);
 
   var token = JSON.stringify({
+    "id": "session-" + sessionId,
     "host": "192.168.33.99:8080",  // FIXME: needs to come from the server
     "secure": false
   });

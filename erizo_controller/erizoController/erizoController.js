@@ -195,12 +195,11 @@ var listen = function () {
             log.debug("New token", token);
 
             var tokenDB = token, user, streamList = [], index;
-            tokenDB.room = 'recordingRoom';
 
-            if (rooms[tokenDB.room] === undefined) {
+            if (rooms[tokenDB.id] === undefined) {
                 var room = {};
 
-                room.id = tokenDB.room;
+                room.id = tokenDB.id;
                 room.sockets = [];
                 room.sockets.push(socket.id);
                 room.streams = {}; //streamId: Stream
@@ -232,21 +231,19 @@ var listen = function () {
 
                     });
                 }
-                rooms[tokenDB.room] = room;
+                rooms[tokenDB.id] = room;
             } else {
-                rooms[tokenDB.room].sockets.push(socket.id);
+                rooms[tokenDB.id].sockets.push(socket.id);
             }
             user = {name: "user"};
             socket.user = user;
-            socket.room = rooms[tokenDB.room];
+            socket.room = rooms[tokenDB.id];
             socket.streams = []; //[list of streamIds]
             socket.state = 'sleeping';
 
-            log.debug('OK, Valid token');
-
             if (!tokenDB.p2p && GLOBAL.config.erizoController.report.session_events) {
                 var timeStamp = new Date();
-                amqper.broadcast('event', {room: tokenDB.room, user: socket.id, type: 'user_connection', timestamp:timeStamp.getTime()});
+                amqper.broadcast('event', {room: tokenDB.id, user: socket.id, type: 'user_connection', timestamp:timeStamp.getTime()});
             }
 
             for (index in socket.room.streams) {
@@ -445,10 +442,7 @@ var listen = function () {
         // Returns callback(id, error)
         socket.on('startRecorder', function (options, callback) {
             var streamId = options.to;
-
-	    // use recording ID instead of random number
-            var recordingId = options.recordingId;
-
+            var recordingId = socket.room.id;
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
