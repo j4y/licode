@@ -150,22 +150,6 @@ install_libsrtp(){
   cd $CURRENT_DIR
 }
 
-install_glib2(){
-  if [ -d $LIB_DIR ]; then
-    cd $LIB_DIR
-    curl -O http://ftp.gnome.org/pub/gnome/sources/glib/2.38/glib-2.38.2.tar.xz
-    tar -xvf glib-2.38.2.tar.xz
-    cd glib-2.38.2
-    ./configure --prefix=$PREFIX_DIR
-    make 
-    make install
-    cd $CURRENT_DIR
-  else
-    mkdir -p $LIB_DIR
-    install_libnice
-  fi
-
-}
 cleanup(){  
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
@@ -184,9 +168,6 @@ pause "Installing deps via apt-get... [press Enter]"
 install_apt_deps
 
 check_proxy
-
-pause "Installing glib2 library...  [press Enter]"
-install_glib2
 
 pause "Installing openssl library...  [press Enter]"
 install_openssl
