@@ -129,7 +129,8 @@ namespace erizo {
     }
 
     if (remoteSdp_.videoBandwidth !=0){
-      this->rtcpProcessor_->setVideoBW(remoteSdp_.videoBandwidth);
+      ELOG_DEBUG("Setting remote bandwidth %u", remoteSdp_.videoBandwidth);
+      this->rtcpProcessor_->setVideoBW(remoteSdp_.videoBandwidth*1000);
     }
 
     return true;

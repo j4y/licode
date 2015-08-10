@@ -424,9 +424,8 @@ var listen = function () {
                             }
                             return;
                         }
-                        if(signMess.type==='insufficientBandwidth'){
-                          log.info("InsufficientBandwidth in erizoController");
-                          socket.emit('onInsufficientBandwidth', {streamID:options.streamId});
+                        if(signMess.type==='bandwidthAlert'){
+                          socket.emit('onBandwidthAlert', {streamID:options.streamId, message:signMess.message, bandwidth: signMess.bandwidth});
                         }
 
                         // if (signMess.type === 'candidate') {
@@ -447,10 +446,14 @@ var listen = function () {
         // Returns callback(id, error)
         socket.on('startRecorder', function (options, callback) {
             var streamId = options.to;
+<<<<<<< HEAD
+            var recordingId = socket.room.id;
+=======
 
 	    // use recording ID instead of random number
             var recordingId = options.recordingId;
 
+>>>>>>> Modify Licode to use the room name as the room id as a way to control the recording Id
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
