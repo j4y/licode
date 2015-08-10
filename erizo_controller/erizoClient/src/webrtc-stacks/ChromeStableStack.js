@@ -169,10 +169,7 @@ Erizo.ChromeStableStack = function (spec) {
                 remoteDesc.sdp = setMaxBW(remoteDesc.sdp);
                 that.peerConnection.setRemoteDescription(new RTCSessionDescription(remoteDesc), function () {
                     spec.remoteDescriptionSet = true;
-                    spec.callback({type:'updatesdp', sdp: localDesc.sdp});
-                    if (callback)
-                        callback("success");
-
+                    spec.callback({type:'updatestream', sdp: localDesc.sdp});
                 });
             }, function (error){
                 L.Logger.error("Error updating configuration", error);
