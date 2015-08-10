@@ -52,7 +52,7 @@ install_openssl(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O http://www.openssl.org/source/openssl-1.0.1g.tar.gz
-    tar -zxvf openssl-1.0.1g.tar.gz
+    tar -xf openssl-1.0.1g.tar.gz
     cd openssl-1.0.1g
     ./config --prefix=$PREFIX_DIR -fPIC
     make -s V=0
@@ -68,7 +68,7 @@ install_libnice(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O http://nice.freedesktop.org/releases/libnice-0.1.4.tar.gz
-    tar -zxvf libnice-0.1.4.tar.gz
+    tar -xf libnice-0.1.4.tar.gz
     cd libnice-0.1.4
     patch -R ./agent/conncheck.c < $PATHNAME/libnice-014.patch0
     PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig ./configure --prefix=$PREFIX_DIR 
@@ -85,7 +85,7 @@ install_opus(){
   [ -d $LIB_DIR ] || mkdir -p $LIB_DIR
   cd $LIB_DIR
   curl -O http://downloads.xiph.org/releases/opus/opus-1.1.tar.gz
-  tar -zxvf opus-1.1.tar.gz
+  tar -xf opus-1.1.tar.gz
   cd opus-1.1
   ./configure --prefix=$PREFIX_DIR
   make -s V=0
@@ -111,7 +111,7 @@ install_mediadeps(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -zxf libav-11.1.tar.gz
+    tar -xf libav-11.1.tar.gz
     cd libav-11.1
     PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-gpl --enable-libvpx --enable-libx264 --enable-libopus
     make -s V=0
@@ -129,7 +129,7 @@ install_mediadeps_nogpl(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -zxf libav-11.1.tar.gz
+    tar -xf libav-11.1.tar.gz
     cd libav-11.1
     PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-libopus --enable-libvpx
     CPATH=${PREFIX_DIR}/include make -s V=0
