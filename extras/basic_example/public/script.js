@@ -9,7 +9,7 @@ function testConnection () {
 function startRecording () {
   if (room !== undefined){
     if (!recording){
-      room.startRecording(localStream, recordingId, function(id) {
+      room.startRecording(localStream, function(id) {
         recording = true;
       });
     } else {
