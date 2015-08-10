@@ -106,25 +106,23 @@ install_vpx(){
   make -s V=0
   make install
   cd $CURRENT_DIR
-
 }
 
 install_mediadeps(){
-  sudo apt-get install yasm libvpx. libx264.
-  if [ -d $LIB_DIR ]; then
-    cd $LIB_DIR
-    curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -xf libav-11.1.tar.gz
-    cd libav-11.1
-    PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-gpl --enable-libvpx --enable-libx264 --enable-libopus
-    make -s V=0
-    make install
-    cd $CURRENT_DIR
-  else
-    mkdir -p $LIB_DIR
-    install_mediadeps
-  fi
+  cd $LIB_DIR
+  curl -O http://ftp.videolan.org/pub/videolan/x264/snapshots/last_stable_x264.tar.bz2
+  tar -xf last_stable_x264.tar.bz2
+  cd x264-snapshot-*-stable
+  ./configure --prefix=$PREFIX_DIR --enable-pic --enable-shared --disable-lavf
+  make -s V=0
+  make install
 
+  curl -O https://www.libav.org/releases/libav-11.1.tar.gz
+  tar -xf libav-11.1.tar.gz
+  cd libav-11.1
+  PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-gpl --enable-libvpx --enable-libx264 --enable-libopus
+  make -s V=0
+  make install
 }
 
 install_mediadeps_nogpl(){
