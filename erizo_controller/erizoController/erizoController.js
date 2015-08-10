@@ -97,22 +97,6 @@ var log = logger.getLogger("ErizoController");
 
 var server;
 
-if (GLOBAL.config.erizoController.ssl) {
-    var https = require('https');
-    var fs = require('fs');
-    var options = {
-        key: fs.readFileSync('../../cert/key.pem').toString(),
-        cert: fs.readFileSync('../../cert/cert.pem').toString()
-    };
-    server = https.createServer(options);
-} else {
-    var http = require('http');
-    server = http.createServer();
-}
-
-server.listen(GLOBAL.config.erizoController.port);
-var io = require('socket.io').listen(server, {log:false});
-
 if (GLOBAL.config.erizoController.listen_ssl) {
     var https = require('https');
     var fs = require('fs');
