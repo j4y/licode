@@ -222,6 +222,7 @@ namespace erizo{
 
       if((rtcpData->requestRr||dt >= RTCP_PERIOD||rtcpData->shouldSendREMB) && rtcpData->lastSr > 0){  // Generate Full RTCP Packet
         bool shouldReset = false;
+        uint8_t packet[128]; // 128 is the max packet length
         rtcpData->requestRr = false;
         RtcpHeader rtcpHead;
         rtcpHead.setPacketType(RTCP_Receiver_PT);
@@ -243,10 +244,10 @@ namespace erizo{
         rtcpHead.setLength(7);
         rtcpHead.setBlockCount(1);
         int length = (rtcpHead.getLength()+1)*4;
-        memcpy(packet_, (uint8_t*)&rtcpHead, length);
+        memcpy(packet, (uint8_t*)&rtcpHead, length);
         if(rtcpData->shouldSendNACK){
           //          ELOG_DEBUG("SEND NACK, SENDING with Seqno: %u", rtcpData->nackSeqnum);
-          int theLen = this->addNACK((char*)packet_, length, rtcpData->nackSeqnum, rtcpData->nackBlp, sourceSsrc);
+          int theLen = this->addNACK((char*)packet, length, rtcpData->nackSeqnum, rtcpData->nackBlp, sourceSsrc);
           rtcpData->shouldSendNACK = false;
           rtcpData->nackSeqnum = 0;
           rtcpData->nackBlp = 0;
@@ -255,11 +256,11 @@ namespace erizo{
         unsigned int sincelastREMB = (now.tv_sec - rtcpData->lastREMBSent.tv_sec) * 1000 + (now.tv_usec - rtcpData->lastREMBSent.tv_usec) / 1000;
         if((rtcpData->mediaType == VIDEO_TYPE) && (rtcpData->shouldSendREMB || sincelastREMB > REMB_TIMEOUT)){
           if (sincelastREMB > REMB_TIMEOUT){
-            ELOG_DEBUG("Too much time since last REMB, generating one with default BW %u", (defaultBw_*1000));
+            ELOG_DEBUG("Too much time since last REMB, generating one with default BW");
             rtcpData->reportedBandwidth = defaultBw_*1000;
           }
-//          ELOG_DEBUG("SEND REMB, SINCE LAST %u ms, SENDING with BW: %lu", sincelastREMB, rtcpData->reportedBandwidth);
-          int theLen = this->addREMB((char*)packet_, length, rtcpData->reportedBandwidth);
+          ELOG_DEBUG("SEND REMB, SINCE LAST %u ms, SENDING with BW: %lu", sincelastREMB, rtcpData->reportedBandwidth);
+          int theLen = this->addREMB((char*)packet, length, rtcpData->reportedBandwidth);
           rtcpData->shouldSendREMB = false;
           rtcpData->lastREMBSent = now;
           length = theLen;
@@ -269,22 +270,11 @@ namespace erizo{
 
         // wrtcConn_->queueData(0, (char*)packet, length, videoTransport_, OTHER_PACKET);
         if  (sourceSsrc == rtcpSource_->getVideoSourceSSRC()){
-          rtcpSink_->deliverVideoData((char*)packet_, length);
+          rtcpSink_->deliverVideoData((char*)packet, length);
         }else{
-          rtcpSink_->deliverAudioData((char*)packet_, length);
+          rtcpSink_->deliverAudioData((char*)packet, length);
         }
         rtcpData->lastRrSent = now;
-        if (dt>rtcpData->nextPacketInMs) // Every scheduled packet we reset
-          shouldReset = true;
-        // schedule next packet
-        float random = (rand()%100+50)/100.0;
-        if ( rtcpData->mediaType == AUDIO_TYPE){
-          rtcpData->nextPacketInMs = RR_AUDIO_PERIOD*random;
-//          ELOG_DEBUG("Scheduled next Audio RR in %u ms", rtcpData->nextPacketInMs);
-        } else {
-          rtcpData->nextPacketInMs = (RR_VIDEO_BASE)*random;
-//          ELOG_DEBUG("Scheduled next Video RR in %u ms", rtcpData->nextPacketInMs);
-        }
         if (shouldReset){
           rtcpData->reset();
         }
@@ -292,6 +282,7 @@ namespace erizo{
       if (rtcpData->shouldSendPli){
         unsigned int sincelast = (now.tv_sec - rtcpData->lastPliSent.tv_sec) * 1000 + (now.tv_usec - rtcpData->lastPliSent.tv_usec) / 1000;
         if (sincelast >= PLI_THRESHOLD){
+          ELOG_DEBUG("SENDING PLI");
           rtcpSource_->sendPLI();
           rtcpData->lastPliSent = now;
           rtcpData->shouldSendPli = false;
