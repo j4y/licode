@@ -48,7 +48,6 @@ install_apt_deps(){
   sudo yum -y install epel-release
   # now that yum knows about epel it can install the rest of the packages
   sudo yum -y install patch git make gcc openssl-devel cmake pkgconfig nodejs glib2-devel boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server curl boost-test tar xz libffi-devel npm yasm java-1.7.0-openjdk
-  sudo chown -R `whoami` ~/.npm ~/tmp/
 }
 
 install_openssl(){
