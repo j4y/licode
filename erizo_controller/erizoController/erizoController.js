@@ -446,14 +446,7 @@ var listen = function () {
         // Returns callback(id, error)
         socket.on('startRecorder', function (options, callback) {
             var streamId = options.to;
-<<<<<<< HEAD
             var recordingId = socket.room.id;
-=======
-
-	    // use recording ID instead of random number
-            var recordingId = options.recordingId;
-
->>>>>>> Modify Licode to use the room name as the room id as a way to control the recording Id
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
