@@ -471,11 +471,12 @@ var listen = function () {
                 callback(null, 'Stream can not be recorded');
             }
         });
-        
+
         // Gets 'stopRecorder' messages
         // Returns callback(result, error)
         socket.on('stopRecorder', function (options, callback) {
-            var recordingId = options.id;
+            var recordingId = socket.room.id;
+
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
@@ -484,12 +485,12 @@ var listen = function () {
                 url = '/tmp/' + recordingId + '.mkv';
             }
 
-            log.info("erizoController.js: Stoping recording  " + recordingId + " url " + url);
+            log.info("erizoController.js: Stopping recording  " + recordingId + " url " + url);
             socket.room.controller.removeExternalOutput(url, callback);
 
 	    var sessionToken = recordingId;
             log.info("erizoController.js: affdex.saveVideo " + recordingId);
-	
+
             affdex.saveVideo(sessionToken, url, function(err, data) {
 		log.info('saveVideo callback');
 		log.info(data);
