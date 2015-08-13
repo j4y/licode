@@ -391,6 +391,18 @@ namespace erizo {
       }
 
       sdp << "\n" << "c=IN IP4 0.0.0.0" << endl;
+
+     // add fmtp lines for google bandwidth settings
+     // these are experimental SDP options to increase the 300k min limit in Chrome
+     codecCounter = 0;
+     for (unsigned int it =0; it<payloadVector.size(); it++){
+        const RtpMap& payload_info = payloadVector[it];
+        if (payload_info.mediaType == VIDEO_TYPE){
+          codecCounter++;
+          sdp << "a=fmtp:"<< payload_info.payloadType<<" x-google-min-bitrate=1500; x-google-max-quantization=20\n";
+        }
+      }
+
       if (isRtcpMux) {
         sdp << "a=rtcp:1 IN IP4 0.0.0.0" << endl;
       }
