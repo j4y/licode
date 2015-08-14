@@ -407,7 +407,9 @@ void ExternalOutput::queueData(char* buffer, int length, packetType type){
             long long videoTimeStamp = (currentTimestamp - firstVideoTimestamp_) / (90000 / video_stream_->time_base.den);
             ELOG_DEBUG(" current=%d, last=%d, Delta timestamp=%d", videoTimeStamp, lastPushedTimeStamp_,(videoTimeStamp - lastPushedTimeStamp_));
             if ((videoTimeStamp - lastPushedTimeStamp_ ) >= PLI_INTERVAL) {
-                this->sendFirPacket();
+	        // Abdo's fix
+                // this->sendFirPacket();
+                this->sendREMBPacket();
                 ELOG_DEBUG(" Sending Request for PLI");
                 lastPushedTimeStamp_ = videoTimeStamp;
             }
@@ -452,6 +454,32 @@ void ExternalOutput::queueData(char* buffer, int length, packetType type){
         // One or both of our queues has enough data to write stuff out.  Notify our writer.
         cond_.notify_one();
     }
+}
+
+int ExternalOutput::sendREMBPacket() {
+    if (fbSink_ != NULL) {
+      // TODO: can we combine the REMB packet and PLI packet?
+      RtcpHeader theREMB;
+      theREMB.setPacketType(RTCP_PS_Feedback_PT);
+      theREMB.setBlockCount(RTCP_AFB);
+      memcpy(&theREMB.report.rembPacket.uniqueid, "REMB", 4);
+
+      theREMB.setSSRC(this->getVideoSinkSSRC());
+      theREMB.setSourceSSRC(videoSourceSsrc_);
+      theREMB.setLength(5);
+
+      // TODO: what should the bitrate be?
+      theREMB.setREMBBitRate(10000000);
+      theREMB.setREMBNumSSRC(1);
+      theREMB.setREMBFeedSSRC(videoSourceSsrc_);
+
+      char *buf = reinterpret_cast<char*>(&theREMB);
+      int len = (theREMB.getLength()+1)*4;
+      fbSink_->deliverFeedback((char*)buf, len);
+      return len; 
+    }
+    return -1;
+
 }
 
 int ExternalOutput::sendFirPacket() {

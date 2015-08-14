@@ -95,6 +95,7 @@ private:
 
     bool initContext();
     int sendFirPacket();
+    int sendREMBPacket();
     void queueData(char* buffer, int length, packetType type);
     void sendLoop();
     int deliverAudioData_(char* buf, int len);
