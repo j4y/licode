@@ -464,12 +464,12 @@ int ExternalOutput::sendREMBPacket() {
       theREMB.setBlockCount(RTCP_AFB);
       memcpy(&theREMB.report.rembPacket.uniqueid, "REMB", 4);
 
-      theREMB.setSSRC(this->getVideoSinkSSRC());
+      theREMB.setSSRC(55543);
       theREMB.setSourceSSRC(videoSourceSsrc_);
       theREMB.setLength(5);
 
       // TODO: what should the bitrate be?
-      theREMB.setREMBBitRate(10000000);
+      theREMB.setREMBBitRate(5000);
       theREMB.setREMBNumSSRC(1);
       theREMB.setREMBFeedSSRC(videoSourceSsrc_);
 
