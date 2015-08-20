@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -e
+
 SCRIPT=`pwd`/$0
 FILENAME=`basename $SCRIPT`
 PATHNAME=`dirname $SCRIPT`
@@ -8,10 +11,6 @@ CURRENT_DIR=`pwd`
 
 LIB_DIR=$BUILD_DIR/libdeps
 PREFIX_DIR=$LIB_DIR/build/
-
-pause() {
-  read -p "$*"
-}
 
 parse_arguments(){
   while [ "$1" != "" ]; do
@@ -44,19 +43,22 @@ check_proxy(){
 }
 
 install_apt_deps(){
-sudo yum -y install git make gcc openssl-devel cmake pkgconfig nodejs boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server mongodb mongodb-server curl boost-test tar xz libffi-devel npm yasm java-1.7.0-openjdk
-  sudo chown -R `whoami` ~/.npm ~/tmp/
+  # install epel which enables the repo that contains some of
+  # the packages that we need
+  sudo yum -y install epel-release
+  # now that yum knows about epel it can install the rest of the packages
+  sudo yum -y install patch git make gcc openssl-devel cmake pkgconfig nodejs glib2-devel boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server curl boost-test tar xz libffi-devel npm yasm java-1.7.0-openjdk
 }
 
 install_openssl(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O http://www.openssl.org/source/openssl-1.0.1g.tar.gz
-    tar -zxvf openssl-1.0.1g.tar.gz
+    tar -xf openssl-1.0.1g.tar.gz
     cd openssl-1.0.1g
     ./config --prefix=$PREFIX_DIR -fPIC
     make -s V=0
-    make install
+    make install_sw
     cd $CURRENT_DIR
   else
     mkdir -p $LIB_DIR
@@ -68,7 +70,7 @@ install_libnice(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O http://nice.freedesktop.org/releases/libnice-0.1.4.tar.gz
-    tar -zxvf libnice-0.1.4.tar.gz
+    tar -xf libnice-0.1.4.tar.gz
     cd libnice-0.1.4
     patch -R ./agent/conncheck.c < $PATHNAME/libnice-014.patch0
     PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig ./configure --prefix=$PREFIX_DIR 
@@ -85,7 +87,7 @@ install_opus(){
   [ -d $LIB_DIR ] || mkdir -p $LIB_DIR
   cd $LIB_DIR
   curl -O http://downloads.xiph.org/releases/opus/opus-1.1.tar.gz
-  tar -zxvf opus-1.1.tar.gz
+  tar -xf opus-1.1.tar.gz
   cd opus-1.1
   ./configure --prefix=$PREFIX_DIR
   make -s V=0
@@ -103,33 +105,30 @@ install_vpx(){
   make -s V=0
   make install
   cd $CURRENT_DIR
-
 }
 
 install_mediadeps(){
-  sudo apt-get install yasm libvpx. libx264.
-  if [ -d $LIB_DIR ]; then
-    cd $LIB_DIR
-    curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -zxf libav-11.1.tar.gz
-    cd libav-11.1
-    PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-gpl --enable-libvpx --enable-libx264 --enable-libopus
-    make -s V=0
-    make install
-    cd $CURRENT_DIR
-  else
-    mkdir -p $LIB_DIR
-    install_mediadeps
-  fi
+  cd $LIB_DIR
+  curl -O http://ftp.videolan.org/pub/videolan/x264/snapshots/last_stable_x264.tar.bz2
+  tar -xf last_stable_x264.tar.bz2
+  cd x264-snapshot-*-stable
+  ./configure --prefix=$PREFIX_DIR --enable-pic --enable-shared --disable-lavf
+  make -s V=0
+  make install
 
+  curl -O https://www.libav.org/releases/libav-11.1.tar.gz
+  tar -xf libav-11.1.tar.gz
+  cd libav-11.1
+  PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-gpl --enable-libvpx --enable-libx264 --enable-libopus
+  make -s V=0
+  make install
 }
 
 install_mediadeps_nogpl(){
-#  sudo apt-get install yasm libvpx.
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
     curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -zxf libav-11.1.tar.gz
+    tar -xf libav-11.1.tar.gz
     cd libav-11.1
     PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig CPATH=${PREFIX_DIR}/include ./configure --prefix=$PREFIX_DIR --enable-shared --enable-libopus --enable-libvpx
     CPATH=${PREFIX_DIR}/include make -s V=0
@@ -150,22 +149,6 @@ install_libsrtp(){
   cd $CURRENT_DIR
 }
 
-install_glib2(){
-  if [ -d $LIB_DIR ]; then
-    cd $LIB_DIR
-    curl -O http://ftp.gnome.org/pub/gnome/sources/glib/2.38/glib-2.38.2.tar.xz
-    tar -xvf glib-2.38.2.tar.xz
-    cd glib-2.38.2
-    ./configure --prefix=$PREFIX_DIR
-    make 
-    make install
-    cd $CURRENT_DIR
-  else
-    mkdir -p $LIB_DIR
-    install_libnice
-  fi
-
-}
 cleanup(){  
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
@@ -183,8 +166,6 @@ mkdir -p $PREFIX_DIR
 install_apt_deps
 
 check_proxy
-
-install_glib2
 
 install_openssl
 

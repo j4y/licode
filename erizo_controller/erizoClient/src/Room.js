@@ -243,6 +243,7 @@ Erizo.Room = function (spec) {
 
     // Function to send a message to the server using socket.io
     sendMessageSocket = function (type, msg, callback, error) {
+        console.log("sendMessageSocket ", type, " ", msg);
         that.socket.emit(type, msg, function (respType, msg) {
             if (respType === "success") {
                 if (callback !== undefined) {
@@ -275,7 +276,7 @@ Erizo.Room = function (spec) {
     // It stablishes a connection to the room. Once it is done it throws a RoomEvent("room-connected")
     that.connect = function () {
         var streamList = [],
-            token = L.Base64.decodeBase64(spec.token);
+            token = spec.token;
 
         if (that.state !== DISCONNECTED) {
             L.Logger.error("Room already connected");
@@ -476,8 +477,10 @@ Erizo.Room = function (spec) {
 
     // Returns callback(id, error)
     that.startRecording = function (stream, callback) {
-        L.Logger.debug("Start Recording streamaa: " + stream.getID());
-        sendMessageSocket('startRecorder', {to: stream.getID()}, function(id, error){
+        var recordingId = that.roomID;
+        L.Logger.debug("Start Recording stream: " + stream.getID() + " - " + recordingId);
+        // send the roomID in as the recordingId
+        sendMessageSocket('startRecorder', {to: stream.getID(), recordingId: recordingId}, function(id, error){
             if (id === null){
                 L.Logger.error('Error on start recording', error);
                 if (callback) callback(undefined, error);
@@ -490,8 +493,8 @@ Erizo.Room = function (spec) {
     }
 
     // Returns callback(id, error)
-    that.stopRecording = function (recordingId, callback) {
-        sendMessageSocket('stopRecorder', {id: recordingId}, function(result, error){
+    that.stopRecording = function (callback) {
+        sendMessageSocket('stopRecorder', {}, function(result, error){
             if (result === null){
                 L.Logger.error('Error on stop recording', error);
                 if (callback) callback(undefined, error);
