@@ -393,8 +393,24 @@ namespace erizo {
         }
       }
     }
-    // check if we need to send FB || RR messages
-    rtcpProcessor_->checkRtcpFb();      
+    // If video recorded, we don't get feedback from the browser
+    // So we want to trigger feedback on regular bases.
+    if (rtcpProcessor_->isVideoRecording()) {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        unsigned int nowms = (now.tv_sec - lastTriggeredFB_.tv_sec) * 1000 + (now.tv_usec - lastTriggeredFB_.tv_usec) / 1000;
+
+        if (nowms >= TRIGGER_FEEDBACK_INTERVAL) {
+          ELOG_DEBUG("Triggering RTCP feedback (video recording), nowms=%u, interval=%u", nowms, TRIGGER_FEEDBACK_INTERVAL);
+          rtcpProcessor_->recorderRtcpFb();
+          lastTriggeredFB_ = now;
+        }
+
+    }
+    else {
+      // check if we need to send FB || RR messages
+      rtcpProcessor_->checkRtcpFb();
+    }      
   }
 
   int WebRtcConnection::sendPLI() {
@@ -579,6 +595,10 @@ namespace erizo {
 
   std::string WebRtcConnection::getJSONStats(){
     return thisStats_.getStats();
+  }
+
+  void WebRtcConnection::setVideoRecording(bool flag) {
+       if (rtcpProcessor_) rtcpProcessor_->setVideoRecording(flag);
   }
 
   void WebRtcConnection::sendLoop() {

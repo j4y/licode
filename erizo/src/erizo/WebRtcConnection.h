@@ -140,6 +140,8 @@ public:
       this->shouldSendFeedback_ = shouldSendFb;
       this->rateControl_ = rateControl;
     };
+    
+    void setVideoRecording(bool flag);
 
 
     // webrtc::RtpHeader overrides.
@@ -185,9 +187,9 @@ private:
 
   webrtc::FecReceiverImpl fec_receiver_;
 	boost::condition_variable cond_;
+  static const int TRIGGER_FEEDBACK_INTERVAL=5000; //If video recorded, trigger feedback every 5 secs
 
-
-  struct timeval now_, mark_;
+  struct timeval now_, mark_, lastTriggeredFB_;
 };
 
 } /* namespace erizo */
