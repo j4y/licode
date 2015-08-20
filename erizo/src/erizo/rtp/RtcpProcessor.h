@@ -55,7 +55,7 @@ namespace erizo {
     uint16_t nackBlp;
 
     // time based data flow limits
-    struct timeval lastSrUpdated, lastREMBSent;
+    struct timeval lastSrUpdated, lastREMBSent, lastPLISent;
     struct timeval lastSrReception, lastRrWasScheduled;
     // to prevent sending too many reports, track time of last
     struct timeval lastRrSent;
@@ -94,6 +94,7 @@ namespace erizo {
       nackSeqnum = 0;
       nackBlp = 0;
       lastRrSent = (struct timeval){0, 0};
+      lastPLISent = (struct timeval){0, 0};
       lastREMBSent = (struct timeval){0, 0};
       lastSrReception = (struct timeval){0, 0};
       lastRrWasScheduled = (struct timeval){0, 0};
@@ -112,9 +113,13 @@ class RtcpProcessor{
     };
     void addSourceSsrc(uint32_t ssrc);
     void setVideoBW(uint32_t bandwidth);
+    bool isVideoRecording();
+    void setVideoRecording(bool record);
     void analyzeSr(RtcpHeader* chead);
     void analyzeFeedback(char* buf, int len);
     void checkRtcpFb();
+    void recorderRtcpFb();
+    void sendRtcpFb(uint32_t sourceSsrc, boost::shared_ptr<RtcpData> rtcpData, struct timeval now);
     int addREMB(char* buf, int len, uint32_t bitrate);
     int addNACK(char* buf, int len, uint16_t seqNum, uint16_t blp, uint32_t sourceSsrc, uint32_t sinkSsrc);
 
@@ -122,6 +127,8 @@ class RtcpProcessor{
     static const int RR_AUDIO_PERIOD = 2000;
     static const int RR_VIDEO_BASE = 1000; 
     static const int REMB_TIMEOUT = 5000;
+    static const int PLI_INTERVAL = 15000;
+    static const int REMB_RAMPUP = 5;
     static const uint64_t NTPTOMSCONV = 4294967296;
     std::map<uint32_t, boost::shared_ptr<RtcpData>> rtcpData_;
     boost::mutex mapLock_;
@@ -129,6 +136,8 @@ class RtcpProcessor{
     MediaSource* rtcpSource_; // The source of SRs
     uint32_t defaultBw_;
     uint8_t packet_[128];
+    bool isRecording_;
+    int remb_rampup_;
 
 };
 

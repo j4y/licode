@@ -29,6 +29,7 @@ void WebRtcConnection::Init(Handle<Object> target) {
   tpl->PrototypeTemplate()->Set(String::NewSymbol("getStats"), FunctionTemplate::New(getStats)->GetFunction());
   tpl->PrototypeTemplate()->Set(String::NewSymbol("generatePLIPacket"), FunctionTemplate::New(generatePLIPacket)->GetFunction());
   tpl->PrototypeTemplate()->Set(String::NewSymbol("setFeedbackReports"), FunctionTemplate::New(setFeedbackReports)->GetFunction());
+  tpl->PrototypeTemplate()->Set(String::NewSymbol("setVideoRecording"), FunctionTemplate::New(setVideoRecording)->GetFunction());
 
   Persistent<Function> constructor = Persistent<Function>::New(tpl->GetFunction());
   target->Set(String::NewSymbol("WebRtcConnection"), constructor);
@@ -219,6 +220,18 @@ Handle<Value> WebRtcConnection::setFeedbackReports(const v8::Arguments& args){
   bool v = (args[0]->ToBoolean())->BooleanValue();
   int fbreps = args[1]->IntegerValue(); // From bps to Kbps
   me->setFeedbackReports(v, fbreps);
+
+  return scope.Close(Null());
+}
+
+Handle<Value> WebRtcConnection::setVideoRecording(const v8::Arguments& args){
+  HandleScope scope;
+  
+  WebRtcConnection* obj = ObjectWrap::Unwrap<WebRtcConnection>(args.This());
+  erizo::WebRtcConnection *me = obj->me;
+  
+  bool v = (args[0]->ToBoolean())->BooleanValue();
+  me->setVideoRecording(v);
 
   return scope.Close(Null());
 }
