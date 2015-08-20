@@ -297,6 +297,7 @@ exports.ErizoJSController = function (spec) {
             log.info("Adding ExternalOutput to " + to + " url " + url);
             var externalOutput = new addon.ExternalOutput(url);
             externalOutput.init();
+            publishers[to].wrtc.setVideoRecording(true);
             publishers[to].muxer.addExternalOutput(externalOutput, url);
             externalOutputs[url] = externalOutput;
         }
@@ -305,6 +306,7 @@ exports.ErizoJSController = function (spec) {
     that.removeExternalOutput = function (to, url) {
       if (externalOutputs[url] !== undefined && publishers[to] !== undefined) {
         log.info("Stopping ExternalOutput: url " + url);
+        publishers[to].wrtc.setVideoRecording(false);
         publishers[to].muxer.removeSubscriber(url);
         delete externalOutputs[url];
       }
