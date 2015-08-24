@@ -1,7 +1,10 @@
 /*global require, logger. setInterval, clearInterval, Buffer, exports*/
 var crypto = require('crypto');
-var rpcPublic = require('./rpc/rpcPublic');
 var ST = require('./Stream');
+var http = require('http');
+var affdex = require('affdex-licode');
+var server = http.createServer();
+var io = require('socket.io').listen(server, {log:false});
 var config = require('./../../licode_config');
 var Permission = require('./permission');
 var Getopt = require('node-getopt');
@@ -29,7 +32,6 @@ GLOBAL.config.erizoController.limit_n_rooms = GLOBAL.config.erizoController.limi
 GLOBAL.config.erizoController.interval_time_keepAlive = GLOBAL.config.erizoController.interval_time_keepAlive || 1000;
 GLOBAL.config.erizoController.report.session_events = GLOBAL.config.erizoController.report.session_events || false;
 GLOBAL.config.erizoController.recording_path = GLOBAL.config.erizoController.recording_path || undefined;
-GLOBAL.config.erizoController.roles = GLOBAL.config.erizoController.roles || {"presenter":{"publish": true, "subscribe":true, "record":true}, "viewer":{"subscribe":true}, "viewerWithData":{"subscribe":true, "publish":{"audio":false,"video":false,"screen":false,"data":true}}};
 
 // Parse command line arguments
 var getopt = new Getopt([
@@ -113,8 +115,6 @@ var io = require('socket.io').listen(server, {log:false});
 
 io.set('log level', 0);
 
-var nuveKey = GLOBAL.config.nuve.superserviceKey;
-
 var WARNING_N_ROOMS = GLOBAL.config.erizoController.warning_n_rooms;
 var LIMIT_N_ROOMS = GLOBAL.config.erizoController.limit_n_rooms;
 
@@ -125,27 +125,6 @@ var BINDED_INTERFACE_NAME = GLOBAL.config.erizoController.networkInterface;
 var myId;
 var rooms = {};
 var myState;
-
-var calculateSignature = function (token, key) {
-    "use strict";
-
-    var toSign = token.tokenId + ',' + token.host,
-        signed = crypto.createHmac('sha1', key).update(toSign).digest('hex');
-    return (new Buffer(signed)).toString('base64');
-};
-
-var checkSignature = function (token, key) {
-    "use strict";
-
-    var calculatedSignature = calculateSignature(token, key);
-
-    if (calculatedSignature !== token.signature) {
-        log.info('Auth fail. Invalid signature.');
-        return false;
-    } else {
-        return true;
-    }
-};
 
 /*
  * Sends a message of type 'type' to all sockets in a determined room.
@@ -199,96 +178,13 @@ var addToCloudHandler = function (callback) {
         publicIP = GLOBAL.config.erizoController.publicIP;
     }
 
-    var addECToCloudHandler = function(attempt) {
-        if (attempt <= 0) {
-            return;
-        }
+    log.debug('publicIp:', publicIP);
+    myId = 42;   // FIXME: does this need to vary or can it stay hard-coded?
+    myState = 2;
 
-        var controller = {
-            cloudProvider: GLOBAL.config.cloudProvider.name,
-            ip: publicIP,
-            hostname: GLOBAL.config.erizoController.hostname,
-            port: GLOBAL.config.erizoController.port,
-            ssl: GLOBAL.config.erizoController.ssl
-        };
-        amqper.callRpc('nuve', 'addNewErizoController', controller, {callback: function (msg) {
-
-            if (msg === 'timeout') {
-                log.info('CloudHandler does not respond');
-
-                // We'll try it more!
-                setTimeout(function() {
-                    attempt = attempt - 1;
-                    addECToCloudHandler(attempt);
-                }, 3000);
-                return;
-            }
-            if (msg == 'error') {
-                log.info('Error in communication with cloudProvider');
-            }
-
-            publicIP = msg.publicIP;
-            myId = msg.id;
-            myState = 2;
-
-            var intervarId = setInterval(function () {
-
-                amqper.callRpc('nuve', 'keepAlive', myId, {"callback": function (result) {
-                    if (result === 'whoareyou') {
-
-                        // TODO: It should try to register again in Cloud Handler. But taking into account current rooms, users, ...
-                        log.info('I don`t exist in cloudHandler. I`m going to be killed');
-                        clearInterval(intervarId);
-                        amqper.callRpc('nuve', 'killMe', publicIP, {callback: function () {}});
-                    }
-                }});
-
-            }, INTERVAL_TIME_KEEPALIVE);
-
-            callback("callback");
-
-        }});
-    };
-    addECToCloudHandler(5);
+    callback("callback");
 };
 
-//*******************************************************************
-//       When adding or removing rooms we use an algorithm to check the state
-//       If there is a state change we send a message to cloudHandler
-//
-//       States:
-//            0: Not available
-//            1: Warning
-//            2: Available
-//*******************************************************************
-var updateMyState = function () {
-    "use strict";
-
-    var nRooms = 0, newState, i, info;
-
-    for (i in rooms) {
-        if (rooms.hasOwnProperty(i)) {
-            nRooms += 1;
-        }
-    }
-
-    if (nRooms < WARNING_N_ROOMS) {
-        newState = 2;
-    } else if (nRooms > LIMIT_N_ROOMS) {
-        newState = 0;
-    } else {
-        newState = 1;
-    }
-
-    if (newState === myState) {
-        return;
-    }
-
-    myState = newState;
-
-    info = {id: myId, state: myState};
-    amqper.callRpc('nuve', 'setInfo', info, {callback: function () {}});
-};
 
 var listen = function () {
     "use strict";
@@ -296,116 +192,81 @@ var listen = function () {
     io.sockets.on('connection', function (socket) {
         log.info("Socket connect ", socket.id);
 
-        // Gets 'token' messages on the socket. Checks the signature and ask nuve if it is valid.
+        // Gets 'token' messages on the socket.
         // Then registers it in the room and callback to the client.
         socket.on('token', function (token, callback) {
 
-            //log.debug("New token", token);
+            log.debug("New token", token);
 
-            var tokenDB, user, streamList = [], index;
+            var tokenDB = token, user, streamList = [], index;
 
-            if (checkSignature(token, nuveKey)) {
+            if (rooms[tokenDB.id] === undefined) {
+                var room = {};
 
-                amqper.callRpc('nuve', 'deleteToken', token.tokenId, {callback: function (resp) {
-                    if (resp === 'error') {
-                        log.info('Token does not exist');
-                        callback('error', 'Token does not exist');
-                        socket.disconnect();
+                room.id = tokenDB.id;
+                room.sockets = [];
+                room.sockets.push(socket.id);
+                room.streams = {}; //streamId: Stream
+                if (tokenDB.p2p) {
+                    log.debug('Token of p2p room');
+                    room.p2p = true;
+                } else {
+                    room.controller = controller.RoomController({amqper: amqper, ecch: ecch});
+                    room.controller.addEventListener(function(type, event) {
+                        // TODO Send message to room? Handle ErizoJS disconnection.
+                        if (type === "unpublish") {
+                            var streamId = parseInt(event); // It's supposed to be an integer.
+                            log.info("ErizoJS stopped", streamId);
+                            sendMsgToRoom(room, 'onRemoveStream', {id: streamId});
+                            room.controller.removePublisher(streamId);
 
-                    } else if (resp === 'timeout') {
-                        log.warn('Nuve does not respond');
-                        callback('error', 'Nuve does not respond');
-                        socket.disconnect();
-
-                    } else if (token.host === resp.host) {
-                        tokenDB = resp;
-                        if (rooms[tokenDB.room] === undefined) {
-                            var room = {};
-
-                            room.id = tokenDB.room;
-                            room.sockets = [];
-                            room.sockets.push(socket.id);
-                            room.streams = {}; //streamId: Stream
-                            if (tokenDB.p2p) {
-                                log.debug('Token of p2p room');
-                                room.p2p = true;
-                            } else {
-                                room.controller = controller.RoomController({amqper: amqper, ecch: ecch});
-                                room.controller.addEventListener(function(type, event) {
-                                    // TODO Send message to room? Handle ErizoJS disconnection.
-                                    if (type === "unpublish") {
-                                        var streamId = parseInt(event); // It's supposed to be an integer.
-                                        log.info("ErizoJS stopped", streamId);
-                                        sendMsgToRoom(room, 'onRemoveStream', {id: streamId});
-                                        room.controller.removePublisher(streamId);
-
-                                        for (var s in room.sockets) {
-                                            var streams = io.sockets.socket(room.sockets[s]).streams;
-                                            var index = streams.indexOf(streamId);
-                                            if (index !== -1) {
-                                                streams.splice(index, 1);
-                                            }
-                                        }
-
-                                        if (room.streams[streamId]) {
-                                            delete room.streams[streamId];
-                                        }
-                                    }
-
-                                });
-                            }
-                            rooms[tokenDB.room] = room;
-                            updateMyState();
-                        } else {
-                            rooms[tokenDB.room].sockets.push(socket.id);
-                        }
-                        user = {name: tokenDB.userName, role: tokenDB.role};
-                        socket.user = user;
-                        var permissions = GLOBAL.config.erizoController.roles[tokenDB.role] || [];
-                        socket.user.permissions = {};
-                        for (var right in permissions) {
-                            socket.user.permissions[right] = permissions[right];
-                        }
-                        socket.room = rooms[tokenDB.room];
-                        socket.streams = []; //[list of streamIds]
-                        socket.state = 'sleeping';
-
-                        log.debug('OK, Valid token');
-
-                        if (!tokenDB.p2p && GLOBAL.config.erizoController.report.session_events) {
-                            var timeStamp = new Date();
-                            amqper.broadcast('event', {room: tokenDB.room, user: socket.id, type: 'user_connection', timestamp:timeStamp.getTime()});
-                        }
-
-                        for (index in socket.room.streams) {
-                            if (socket.room.streams.hasOwnProperty(index)) {
-                                if (socket.room.streams[index].status == PUBLISHER_READY){
-                                    streamList.push(socket.room.streams[index].getPublicStream());
+                            for (var s in room.sockets) {
+                                var streams = io.sockets.socket(room.sockets[s]).streams;
+                                var index = streams.indexOf(streamId);
+                                if (index !== -1) {
+                                    streams.splice(index, 1);
                                 }
                             }
+
+                            if (room.streams[streamId]) {
+                                delete room.streams[streamId];
+                            }
                         }
 
-                        callback('success', {streams: streamList,
-                                            id: socket.room.id,
-                                            p2p: socket.room.p2p,
-                                            defaultVideoBW: GLOBAL.config.erizoController.defaultVideoBW,
-                                            maxVideoBW: GLOBAL.config.erizoController.maxVideoBW,
-                                            stunServerUrl: GLOBAL.config.erizoController.stunServerUrl,
-                                            turnServer: GLOBAL.config.erizoController.turnServer
-                                            });
-
-                    } else {
-                        log.warn('Invalid host');
-                        callback('error', 'Invalid host');
-                        socket.disconnect();
-                    }
-                }});
-
+                    });
+                }
+                rooms[tokenDB.id] = room;
             } else {
-                log.warn("Authentication error");
-                callback('error', 'Authentication error');
-                socket.disconnect();
+                rooms[tokenDB.id].sockets.push(socket.id);
             }
+            user = {name: "user"};
+            socket.user = user;
+            socket.room = rooms[tokenDB.id];
+            socket.streams = []; //[list of streamIds]
+            socket.state = 'sleeping';
+
+            if (!tokenDB.p2p && GLOBAL.config.erizoController.report.session_events) {
+                var timeStamp = new Date();
+                amqper.broadcast('event', {room: tokenDB.id, user: socket.id, type: 'user_connection', timestamp:timeStamp.getTime()});
+            }
+
+            for (index in socket.room.streams) {
+                if (socket.room.streams.hasOwnProperty(index)) {
+                    if (socket.room.streams[index].status == PUBLISHER_READY){
+                        streamList.push(socket.room.streams[index].getPublicStream());
+                    }
+                }
+            }
+
+            callback('success', {streams: streamList,
+                                 id: socket.room.id,
+                                 p2p: socket.room.p2p,
+                                 defaultVideoBW: GLOBAL.config.erizoController.defaultVideoBW,
+                                 maxVideoBW: GLOBAL.config.erizoController.maxVideoBW,
+                                 stunServerUrl: GLOBAL.config.erizoController.stunServerUrl,
+                                 turnServer: GLOBAL.config.erizoController.turnServer
+                                });
+
         });
 
         //Gets 'sendDataStream' messages on the socket in order to write a message in a dataStream.
@@ -451,18 +312,9 @@ var listen = function () {
         // Returns callback(id, error)
         socket.on('publish', function (options, sdp, callback) {
             var id, st;
-            if (socket.user === undefined || !socket.user.permissions[Permission.PUBLISH]) {
-                callback(null, 'Unauthorized');
-                return;
-            }
-            if (socket.user.permissions[Permission.PUBLISH] !== true) {
-                var permissions = socket.user.permissions[Permission.PUBLISH];
-                for (var right in permissions) {
-                    if ((options[right] === true) && (permissions[right] === false))
-                        return callback(null, 'Unauthorized');
-                }
-            } 
             id = Math.random() * 1000000000000000000;
+
+            log.debug('received publish: id', id, 'state', options.state);
 
             if (options.state === 'url' || options.state === 'recording') {
                 var url = sdp;
@@ -542,18 +394,6 @@ var listen = function () {
         // Returns callback(result, error)
         socket.on('subscribe', function (options, sdp, callback) {
             //log.info("Subscribing", options, callback);
-            if (socket.user === undefined || !socket.user.permissions[Permission.SUBSCRIBE]) {
-                callback(null, 'Unauthorized');
-                return;
-            }
-
-            if (socket.user.permissions[Permission.SUBSCRIBE] !== true) {
-                var permissions = socket.user.permissions[Permission.SUBSCRIBE];
-                for (var right in permissions) {
-                    if ((options[right] === true) && (permissions[right] === false))
-                        return callback(null, 'Unauthorized');
-                }
-            }
 
             var stream = socket.room.streams[options.streamId];
 
@@ -605,12 +445,8 @@ var listen = function () {
         // Gets 'startRecorder' messages
         // Returns callback(id, error)
         socket.on('startRecorder', function (options, callback) {
-            if (socket.user === undefined || !socket.user.permissions[Permission.RECORD]) {
-                callback(null, 'Unauthorized');
-                return;
-            }
             var streamId = options.to;
-            var recordingId = Math.random() * 1000000000000000000;
+            var recordingId = socket.room.id;
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
@@ -635,15 +471,12 @@ var listen = function () {
                 callback(null, 'Stream can not be recorded');
             }
         });
-        
+
         // Gets 'stopRecorder' messages
         // Returns callback(result, error)
         socket.on('stopRecorder', function (options, callback) {
-            if (socket.user === undefined || !socket.user.permissions[Permission.RECORD]) {
-                if (callback) callback(null, 'Unauthorized');
-                return;
-            }
-            var recordingId = options.id;
+            var recordingId = socket.room.id;
+
             var url;
 
             if (GLOBAL.config.erizoController.recording_path) {
@@ -652,18 +485,22 @@ var listen = function () {
                 url = '/tmp/' + recordingId + '.mkv';
             }
 
-            log.info("erizoController.js: Stoping recording  " + recordingId + " url " + url);
+            log.info("erizoController.js: Stopping recording  " + recordingId + " url " + url);
             socket.room.controller.removeExternalOutput(url, callback);
+
+	    var sessionToken = recordingId;
+            log.info("erizoController.js: affdex.saveVideo " + recordingId);
+
+            affdex.saveVideo(sessionToken, url, function(err, data) {
+		log.info('saveVideo callback');
+		log.info(data);
+	    });
+
         });
 
         //Gets 'unpublish' messages on the socket in order to remove a stream from the room.
         // Returns callback(result, error)
         socket.on('unpublish', function (streamId, callback) {
-            if (socket.user === undefined || !socket.user.permissions[Permission.PUBLISH]) {
-                if (callback) callback(null, 'Unauthorized');
-                return;
-            }
-
             // Stream has been already deleted or it does not exist
             if (socket.room.streams[streamId] === undefined) {
                 return;
@@ -696,10 +533,6 @@ var listen = function () {
         //Gets 'unsubscribe' messages on the socket in order to remove a subscriber from a determined stream (to).
         // Returns callback(result, error)
         socket.on('unsubscribe', function (to, callback) {
-            if (!socket.user.permissions[Permission.SUBSCRIBE]) {
-                if (callback) callback(null, 'unauthorized');
-                return;
-            }
             if (socket.room.streams[to] === undefined) {
                 return;
             }
@@ -775,122 +608,15 @@ var listen = function () {
             if (socket.room !== undefined && socket.room.sockets.length === 0) {
                 log.info('Empty room ', socket.room.id, '. Deleting it');
                 delete rooms[socket.room.id];
-                updateMyState();
             }
         });
     });
 };
 
 
-/*
- *Gets a list of users in a determined room.
- */
-exports.getUsersInRoom = function (room, callback) {
-    "use strict";
-
-    var users = [], sockets, id;
-    if (rooms[room] === undefined) {
-        callback(users);
-        return;
-    }
-
-    sockets = rooms[room].sockets;
-
-    for (id in sockets) {
-        if (sockets.hasOwnProperty(id)) {
-            users.push(io.sockets.socket(sockets[id]).user);
-        }
-    }
-
-    callback(users);
-};
-
-/*
- *Gets a list of users in a determined room.
- */
-exports.deleteUser = function (user, room, callback) {
-    "use strict";
-
-    var users = [], sockets, id;
-
-     if (rooms[room] === undefined) {
-         callback('Success');
-         return;
-     }
-
-    sockets = rooms[room].sockets;
-    var sockets_to_delete = [];
-
-    for (id in sockets) {
-        if (sockets.hasOwnProperty(id)) {
-            if (io.sockets.socket(sockets[id]).user.name === user){
-                sockets_to_delete.push(sockets[id]);
-            }
-        }
-    }
-
-    for (var s in sockets_to_delete) {
-
-        log.info('Deleted user', io.sockets.socket(sockets_to_delete[s]).user.name);
-        io.sockets.socket(sockets_to_delete[s]).disconnect();
-    }
-
-    if (sockets_to_delete.length !== 0) {
-        callback('Success');
-        return;
-    }
-    else {
-        log.error('User', user, 'does not exist');
-        callback('User does not exist', 404);
-        return;
-    }
-
-
-};
-
-
-/*
- * Delete a determined room.
- */
-exports.deleteRoom = function (room, callback) {
-    "use strict";
-
-    var sockets, streams, id, j;
-
-    log.info('Deleting room ', room);
-
-    if (rooms[room] === undefined) {
-        callback('Success');
-        return;
-    }
-    sockets = rooms[room].sockets;
-
-    for (id in sockets) {
-        if (sockets.hasOwnProperty(id)) {
-            rooms[room].roomController.removeSubscriptions(sockets[id]);
-        }
-    }
-
-    streams = rooms[room].streams;
-
-    for (j in streams) {
-        if (streams[j].hasAudio() || streams[j].hasVideo() || streams[j].hasScreen()) {
-            if (!room.p2p) {
-                rooms[room].roomController.removePublisher(j);
-            }
-        }
-    }
-
-    delete rooms[room];
-    updateMyState();
-    log.info('Deleted room ', room, rooms);
-    callback('Success');
-};
 amqper.connect(function () {
     "use strict";
     try {
-        amqper.setPublicRPC(rpcPublic);
-
         addToCloudHandler(function () {
             var rpcID = 'erizoController_' + myId;
 

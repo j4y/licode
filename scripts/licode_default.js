@@ -2,7 +2,7 @@ var config = {}
 
 /*********************************************************
  COMMON CONFIGURATION
- It's used by Nuve, ErizoController, ErizoAgent and ErizoJS
+ It's used by ErizoController, ErizoAgent and ErizoJS
 **********************************************************/
 config.rabbit = {};
 config.rabbit.host = 'localhost'; //default value: 'localhost'
@@ -12,7 +12,7 @@ config.logger.config_file = '../log4js_configuration.json'; //default value: "..
 
 /*********************************************************
  CLOUD PROVIDER CONFIGURATION
- It's used by Nuve and ErizoController
+ It's used by ErizoController
 **********************************************************/
 config.cloudProvider = {};
 config.cloudProvider.name = '';
@@ -20,18 +20,6 @@ config.cloudProvider.name = '';
 config.cloudProvider.host = '';
 config.cloudProvider.accessKey = '';
 config.cloudProvider.secretAccessKey = '';
-
-/*********************************************************
- NUVE CONFIGURATION
-**********************************************************/
-config.nuve = {};
-config.nuve.dataBaseURL = "localhost/nuvedb"; // default value: 'localhost/nuvedb'
-config.nuve.superserviceID = '_auto_generated_ID_'; // default value: ''
-config.nuve.superserviceKey = '_auto_generated_KEY_'; // default value: ''
-config.nuve.testErizoController = 'localhost:8080'; // default value: 'localhost:8080'
-// Nuve Cloud Handler policies are in nuve/nuveAPI/ch_policies/ folder
-config.nuve.cloudHandlerPolicy = 'default_policy.js'; // default value: 'default_policy.js'
-
 
 /*********************************************************
  ERIZO CONTROLLER CONFIGURATION

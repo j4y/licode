@@ -8,7 +8,6 @@ git checkout async_events
 cd ..
 ./licode/scripts/installUbuntuDepsUnattended.sh --cleanup
 ./licode/scripts/installErizo.sh
-./licode/scripts/installNuve.sh
 ./licode/scripts/installBasicExample.sh
 echo "config.erizoController.publicIP = '$1';" >> ./licode/licode_config.js
 echo "config.erizo.minport = 30000;" >> ./licode/licode_config.js
