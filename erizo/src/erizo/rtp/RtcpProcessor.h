@@ -127,7 +127,7 @@ class RtcpProcessor{
     static const int RR_AUDIO_PERIOD = 2000;
     static const int RR_VIDEO_BASE = 1000; 
     static const int REMB_TIMEOUT = 5000;
-    static const int PLI_INTERVAL = 15000;
+    static const int PLI_INTERVAL = 800;
     static const int REMB_RAMPUP = 5;
     static const uint64_t NTPTOMSCONV = 4294967296;
     std::map<uint32_t, boost::shared_ptr<RtcpData>> rtcpData_;
