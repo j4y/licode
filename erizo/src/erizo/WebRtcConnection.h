@@ -187,7 +187,7 @@ private:
 
   webrtc::FecReceiverImpl fec_receiver_;
 	boost::condition_variable cond_;
-  static const int TRIGGER_FEEDBACK_INTERVAL=5000; //If video recorded, trigger feedback every 5 secs
+  static const int TRIGGER_FEEDBACK_INTERVAL=800; //If video recorded, trigger feedback every 0.8 seconds
 
   struct timeval now_, mark_, lastTriggeredFB_;
 };
