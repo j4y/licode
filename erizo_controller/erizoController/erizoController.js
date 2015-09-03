@@ -150,6 +150,20 @@ var sendMsgToRoom = function (room, type, arg) {
     }
 };
 
+/*
+ * DRY support for getting the recording url from the recordingId
+ */
+var buildRecordingUrl = function (recordingId) {
+    var url, fileExtension = '.mkv';
+
+    if (GLOBAL.config.erizoController.recording_path) {
+        url = GLOBAL.config.erizoController.recording_path + recordingId + fileExtension;
+    } else {
+        url = '/tmp/' + recordingId + fileExtension;
+    }
+    return url;
+}
+
 var privateRegexp;
 var publicIP;
 
@@ -328,11 +342,7 @@ var listen = function () {
                 var url = sdp;
                 if (options.state === 'recording') {
                     var recordingId = sdp;
-                    if (GLOBAL.config.erizoController.recording_path) {
-                        url = GLOBAL.config.erizoController.recording_path + recordingId + '.mkv';
-                    } else {
-                        url = '/tmp/' + recordingId + '.mkv';
-                    }
+                    url = buildRecordingUrl(recordingId);
                 }
                 socket.room.controller.addExternalInput(id, url, function (result) {
                     if (result === 'success') {
@@ -455,13 +465,7 @@ var listen = function () {
         socket.on('startRecorder', function (options, callback) {
             var streamId = options.to;
             var recordingId = socket.room.id;
-            var url;
-
-            if (GLOBAL.config.erizoController.recording_path) {
-                url = GLOBAL.config.erizoController.recording_path + recordingId + '.mkv';
-            } else {
-                url = '/tmp/' + recordingId + '.mkv';
-            }
+            var url = buildRecordingUrl(recordingId);
 
             log.info("erizoController.js: Starting recorder streamID " + streamId + "url ", url);
 
@@ -485,13 +489,7 @@ var listen = function () {
         socket.on('stopRecorder', function (options, callback) {
             var recordingId = socket.room.id;
 
-            var url;
-
-            if (GLOBAL.config.erizoController.recording_path) {
-                url = GLOBAL.config.erizoController.recording_path + recordingId + '.mkv';
-            } else {
-                url = '/tmp/' + recordingId + '.mkv';
-            }
+            var url = buildRecordingUrl(recordingId);
 
             log.info("erizoController.js: Stopping recording  " + recordingId + " url " + url);
             socket.room.controller.removeExternalOutput(url, callback);
@@ -588,7 +586,7 @@ var listen = function () {
                                 if (!socket.room.p2p) {
 
                                     var recordingId = socket.room.id;
-                                    var url = '/tmp/' + recordingId + '.mkv';
+                                    var url = buildRecordingUrl(recordingId);
 
                                     log.info("erizoController.js: affdex.saveVideo " + url);
 
