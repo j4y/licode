@@ -42,6 +42,7 @@ check_proxy(){
   fi  
 }
 
+install_apt_deps(){
   # install epel which enables the repo that contains some of
   # the packages that we need
   sudo yum -y install epel-release
