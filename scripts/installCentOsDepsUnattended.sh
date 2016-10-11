@@ -47,7 +47,16 @@ install_apt_deps(){
   # the packages that we need
   sudo yum -y install epel-release
   # now that yum knows about epel it can install the rest of the packages
-  sudo yum -y install patch git make gcc bzip2-devel x264-devel libav-devel libnice-devel libsrtp-devel libvpx-devel opus-devel openssl-devel cmake pkgconfig nodejs glib2-devel boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server curl boost-test tar xz libffi-devel npm yasm java-1.7.0-openjdk
+  sudo yum -y install patch git make gcc bzip2-devel x264-devel libav-devel libnice-devel libsrtp-devel libvpx-devel opus-devel openssl-devel cmake pkgconfig glib2-devel boost-devel boost-regex boost-thread boost-system log4cxx-devel rabbitmq-server curl boost-test tar xz libffi-devel yasm java-1.7.0-openjdk
+}
+
+install_node(){
+    # we used to use epel packages but they upgraded to a version of
+    # nodejs that's incompatible with licode so now we get it from the
+    # upstream source
+    wget http://nodejs.org/dist/v0.10.47/node-v0.10.47-linux-x64.tar.xz
+    sudo tar --strip-components 1 -xJf node-v* -C /usr/local
+    sudo npm install -g node-gyp
 }
 
 parse_arguments $*
@@ -55,5 +64,6 @@ parse_arguments $*
 mkdir -p $PREFIX_DIR
 
 install_apt_deps
+install_node
 
 check_proxy
