@@ -40,7 +40,7 @@ install_openssl(){
 install_libnice(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
-    curl --silent --output - http://nice.freedesktop.org/releases/libnice-0.1.4.tar.gz | tar xzf -
+    curl --silent --output - https://nice.freedesktop.org/releases/libnice-0.1.4.tar.gz | tar xzf -
     cd libnice-0.1.4
     ./configure --prefix=$PREFIX_DIR
     make -s V=0
