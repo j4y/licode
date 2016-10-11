@@ -25,8 +25,7 @@ parse_arguments(){
 install_openssl(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
-    curl -O http://www.openssl.org/source/openssl-1.0.1g.tar.gz
-    tar -zxvf openssl-1.0.1g.tar.gz > /dev/null 2> /dev/null
+    curl --output - http://www.openssl.org/source/openssl-1.0.1g.tar.gz | tar xzf -
     cd openssl-1.0.1g
     ./config --prefix=$PREFIX_DIR -fPIC
     make -s V=0
