@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 SCRIPT=`pwd`/$0
 FILENAME=`basename $SCRIPT`
@@ -25,7 +25,7 @@ parse_arguments(){
 install_openssl(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
-    curl --output - http://www.openssl.org/source/openssl-1.0.1g.tar.gz | tar xzf -
+    curl --silent --output - https://www.openssl.org/source/openssl-1.0.1g.tar.gz | tar xzf -
     cd openssl-1.0.1g
     ./config --prefix=$PREFIX_DIR -fPIC
     make -s V=0
@@ -40,8 +40,7 @@ install_openssl(){
 install_libnice(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
-    curl -O http://nice.freedesktop.org/releases/libnice-0.1.4.tar.gz
-    tar -zxvf libnice-0.1.4.tar.gz > /dev/null 2> /dev/null
+    curl --silent --output - http://nice.freedesktop.org/releases/libnice-0.1.4.tar.gz | tar xzf -
     cd libnice-0.1.4
     ./configure --prefix=$PREFIX_DIR
     make -s V=0
@@ -56,8 +55,7 @@ install_libnice(){
 install_mediadeps(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
-    curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -zxvf libav-11.1.tar.gz > /dev/null 2> /dev/null
+    curl --silent --output - https://www.libav.org/releases/libav-11.1.tar.gz | tar xzf -
     cd libav-11.1
     ./configure --prefix=$PREFIX_DIR --enable-shared --enable-gpl --enable-libvpx --enable-libx264
     make -s V=0
@@ -73,8 +71,7 @@ install_mediadeps(){
 install_mediadeps_nogpl(){
   if [ -d $LIB_DIR ]; then
     cd $LIB_DIR
-    curl -O https://www.libav.org/releases/libav-11.1.tar.gz
-    tar -zxvf libav-11.1.tar.gz > /dev/null 2> /dev/null
+    curl --silent --output - https://www.libav.org/releases/libav-11.1.tar.gz | tar xzf -
     cd libav-11.1
     ./configure --prefix=$PREFIX_DIR --enable-shared --enable-libvpx
     make -s V=0
@@ -87,8 +84,7 @@ install_mediadeps_nogpl(){
 }
 
 install_libsrtp(){
-  curl -O -L https://github.com/cisco/libsrtp/archive/v1.5.2.tar.gz
-  tar -zxvf v1.5.2.tar.gz > /dev/null 2> /dev/null
+  curl --silent --output - -L https://github.com/cisco/libsrtp/archive/v1.5.2.tar.gz | tar xzf -
   cd libsrtp-1.5.2
   CFLAGS="-fPIC" ./configure --prefix=$PREFIX_DIR
   make -s V=0
