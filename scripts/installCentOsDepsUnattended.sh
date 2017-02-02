@@ -54,8 +54,8 @@ install_node(){
     # we used to use epel packages but they upgraded to a version of
     # nodejs that's incompatible with licode so now we get it from the
     # upstream source
-    wget http://nodejs.org/dist/v0.10.47/node-v0.10.47-linux-x64.tar.xz
-    sudo tar --strip-components 1 -xJf node-v* -C /usr/local
+    wget http://nodejs.org/dist/v0.10.36/node-v0.10.36-linux-x64.tar.gz
+    sudo tar --strip-components 1 -xzf node-v* -C /usr/local
     sudo npm install -g node-gyp
 }
 
