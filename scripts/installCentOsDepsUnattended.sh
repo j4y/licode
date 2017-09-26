@@ -56,7 +56,7 @@ install_node(){
     # upstream source
     wget http://nodejs.org/dist/v0.10.36/node-v0.10.36-linux-x64.tar.gz
     sudo tar --strip-components 1 -xzf node-v* -C /usr/local
-    sudo npm install -g node-gyp@0.10.6
+    sudo npm install -g node-gyp@0.10.6 request@2.25.0
 }
 
 parse_arguments $*
