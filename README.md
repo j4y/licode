@@ -1,5 +1,4 @@
 # Licode
-[![Build Status](https://travis-ci.org/Affectiva/licode.svg)](https://travis-ci.org/Affectiva/licode)
 
 More info at:
 http://www.lynckia.com/licode
